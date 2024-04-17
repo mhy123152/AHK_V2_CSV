@@ -1,40 +1,45 @@
+#Requires AutoHotkey v2.0
+
 CSV_Load(FileName, Delimiter := "`,")
 {
-    global
-    dataObj := {
-        CSV_TotalRows : 0,
-        CSV_TotalCols : 0,
-        CSV_Delimiter : "",
-        CSV_Path : "",
-        CSV_FileName : "",
-        CSV_FileNamePath : "",
-        dataArr : []
+    if (!FileExist(FileName)) {
+        MsgBox("File Not Found")
+        return -1
+    }
+
+    global dataObj := {
+        CSV_TotalRows: 0,
+        CSV_TotalCols: 0,
+        CSV_Delimiter: "",
+        CSV_Path: "",
+        CSV_FileName: "",
+        CSV_FileNamePath: "",
+        dataArr: []
     }
 
     Local Row
     Local Col
 
-    temp := FileRead(FileName)
+    fileContents := FileRead(FileName)
 
-    temp := StrReplace(temp, "`r`n`r`n, `r`n")  ;Removes all blank lines from the text in a variable.
+    fileContents := StrReplace(fileContents, "`r`n`r`n, `r`n")  ;Removes all blank lines from the text in a variable.
 
-    NewlineCheck := SubStr(temp, -1)
-    if (NewlineCheck == "`n") {
-        temp := SubStr(temp, -1)
-    }
+    ; NewlineCheck := SubStr(fileContents, -1)
+    ; if (NewlineCheck == "`n") {
+    ;     fileContents := SubStr(fileContents, -1)
+    ; }
 
-    Loop parse, temp, "`n", "`r"
+    Loop parse, fileContents, "`n", "`r"  ; 在 `r 之前指定 `n, 这样可以同时支持对 Windows 和 Unix 文件的解析.
     {
         If (A_LoopField = "") ; added to skip empty lines
             Continue            ; added
-        ; Col := ReturnDSVArray(A_LoopField, CSV_Identifier . "CSV_Row" . A_Index . "_Col", Delimiter)
-        ; row number 2, and column 3: dataCSV_Row2_Col3
+
+        ; MsgBox("Row: " A_Index ", Data: " A_LoopField)
+
         local rowArray := []
         dataObj.dataArr.Push(rowArray)
-        Col := ReturnDSVArray(A_LoopField, rowArray , Delimiter)
+        Col := ReturnDSVArray(A_LoopField, rowArray, Delimiter)
         Row := A_Index
-          
-        ; MsgBox("Row: "  A_Index ", Data: " A_LoopField)
 
     }
 
@@ -53,7 +58,15 @@ CSV_Load(FileName, Delimiter := "`,")
 
 CSV_ReadCell(Row, Col)
 {
-    Return dataObj.dataArr[Row][Col]
+    return dataObj.dataArr[Row][Col]
+}
+
+CSV_TotalRows() {
+    return dataObj.CSV_TotalRows
+}
+
+CSV_TotalCols() {
+    return dataObj.CSV_TotalCols
 }
 
 ReturnDSVArray(CurrentDSVLine, RowArray := [], Delimiter := ",", Encapsulator := '`"')
@@ -86,7 +99,7 @@ ReturnDSVArray(CurrentDSVLine, RowArray := [], Delimiter := ",", Encapsulator :=
             ; leading/trailing encapsulator chars
             field := RegExReplace(field, "^\" e "|\" e "$")
             ; StringReplace, field, field, %Encapsulator Encapsulator, %Encapsulator%, All
-            field := StrReplace(field, Encapsulator " " Encapsulator, %Encapsulator%)
+            field := StrReplace(field, Encapsulator "" Encapsulator, Encapsulator)
         }
         ; Local _field := ReturnArray A_Index  ; construct a reference for our ReturnArray name
         ; %_field% := field                    ; dereference _field and assign our value to it
@@ -94,7 +107,7 @@ ReturnDSVArray(CurrentDSVLine, RowArray := [], Delimiter := ",", Encapsulator :=
         RowArray.Push(field)  ;Push the Col data
 
         ; MsgBox("Row: "  dataObj.dataArr.Length ", Col: " A_Index ", Data: " field)
-        
+
         if (p1 = 0)
         {                                    ; p1 is 0 when no more delimiter chars have been found
             fieldCount--                     ; so correct fieldCount due to last appended delimiter

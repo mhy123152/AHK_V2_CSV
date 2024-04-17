@@ -1,5 +1,7 @@
-﻿#NoEnv
-#SingleInstance, force
+﻿#Requires AutoHotkey v2.0
+#SingleInstance force
+
+#IncludeAgain csv.ahk
 
 ; A basic example illustrating some functions to get an idea of how to use CSV
 ; Consult the library (csv.ahk) for all available functions and required parameters
